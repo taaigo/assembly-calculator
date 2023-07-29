@@ -8,6 +8,9 @@ section .rodata
     num_prompt: db "Please input a number here: ", 0
     num_prompt_len: equ $-num_prompt
 
+    division_by_zero_prompt: db "You cannot devide by zero!", 0xa
+    division_by_zero_prompt_len: equ $-division_by_zero_prompt
+
 section .bss
     operator: resb 2
 
@@ -50,7 +53,7 @@ _start:
     je  multiply
 
     ; Exit the program
-    call exit
+    call exit_success
 
 addition:
     call read_numbers
@@ -66,7 +69,7 @@ addition:
     mov edx, result_length
     int 0x80
     
-    call exit
+    call exit_success
     
 subtraction:
     call read_numbers
@@ -82,7 +85,7 @@ subtraction:
     mov edx, result_length
     int 0x80
 
-    call exit
+    call exit_success
 
 division:
     call read_numbers
@@ -99,7 +102,7 @@ division:
     mov edx, result_length
     int 0x80
 
-    call exit
+    call exit_success
 
 multiply:
     call read_numbers
@@ -115,7 +118,7 @@ multiply:
     mov edx, result_length
     int 0x80
 
-    call exit
+    call exit_success
 
 read_numbers:
     mov eax, 0x4
@@ -141,10 +144,14 @@ read_numbers:
     mov ecx, number2
     mov edx, 0xa
     int 0x80
+    mov eax, [number2]
+    sub eax, 0xa30
+    cmp eax, 0
+    je  division_by_zero_error
     ret
 
 convert_int_to_ASCII:
-    mov eax, [solution]          ; load the integer value to a register
+    mov eax, [solution]     ; load the integer value to a register
     mov ebx, 0xa            ; set the divisor to 10
     mov ecx, result_buffer  ; point ecx to result buffer
     add ecx, result_length  ; move the pointer to the end of the buffer
@@ -172,7 +179,21 @@ conver_input:
     sub ebx, 0xa30
     ret
 
-exit:
+division_by_zero_error:
+    mov eax, 0x4
+    mov ebx, 0x1
+    mov ecx, division_by_zero_prompt
+    mov edx, division_by_zero_prompt_len
+    int 0x80
+
+    call exit_error
+
+exit_error:
+    mov eax, 0x1
+    mov ebx, 0x1
+    int 0x80
+
+exit_success:
     mov eax, 0x1
     xor ebx, ebx
     int 0x80
